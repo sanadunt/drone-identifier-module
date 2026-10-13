@@ -3,3 +3,9 @@
 
 # Electron application archives
 *.asar
+
+# Local npm runtime for the macOS runner
+/node_modules/
+
+# macOS Finder metadata
+.DS_Store
