@@ -22,13 +22,18 @@ The extracted payload is built output, not the original development source. The 
 
 ## Development Commands
 
-`app-unpacked/package.json` declares no scripts; no lockfile or development build configuration is included. Build, lint, test, and repack commands are therefore unavailable. Do not guess package-manager commands. `Device Manager.exe` launches the packaged app on Windows, but is not a development loop and was not run. Repack edited files to a new archive with a compatible ASAR tool; do not overwrite `resources/app.asar` or `backup/app.asar` by default.
+From the repository root on macOS:
+
+- `npm install` installs the pinned local Electron runtime and requires Node.js >=22.12.0; it does not change `app-unpacked/node_modules`.
+- `npm run dev` launches the extracted app with Electron 44.5.1. Do not set `NODE_ENV=development`; the bundled main process treats that as a request to load a Vite server on port 5173, which is not included.
+- This runs the prebuilt renderer only. No source build, hot reload, lint, or test command is configured. Edit bundled JS/CSS and restart the app to see changes. The Windows executable is not used. Do not overwrite `resources/app.asar` or `backup/app.asar` by default.
 
 ## Code Conventions & Common Patterns
 
 The available JavaScript is bundled output; the renderer is one large hashed JS bundle. Preserve the existing IPC contract: preload groups APIs under `serial` and `tcp`, calls main handlers with `ipcRenderer.invoke`, and returns unsubscribe functions for event listeners. Main IPC handlers catch errors and return `{ success: false, error }`. Keep `contextIsolation: true` and `nodeIntegration: false`; avoid editing `node_modules` or vendor assets for app behavior.
 
 ## Important Files
+- `package.json` and `package-lock.json`: macOS npm runner script, Node.js >=22.12.0, and pinned Electron 44.5.1.
 
 - `Device Manager.exe`: packaged Windows application executable.
 - `resources/app.asar`: original application bundle, preserved unchanged.
@@ -41,10 +46,8 @@ The available JavaScript is bundled output; the renderer is one large hashed JS 
 
 No original app source, source maps, test suite, CI workflow, or build configuration was found in the extracted payload.
 
-## Runtime/Tooling Preferences
-
-The package targets Windows and bundles Electron/Chromium/V8 runtime files. `app-unpacked/package.json` lists React 18.2, serialport 12, Zustand 4.4, and Cesium 1.120 among its dependencies. The Electron and Node.js versions and the original package manager are not exposed by the manifest; no lockfile or development toolchain is included.
+The packaged Windows app contains Electron 28.3.3, which is end-of-support. The local macOS runner pins Electron 44.5.1, a supported release at setup time; this does not exactly reproduce the packaged runtime. The extracted `serialport` binding uses Node-API 6 and includes a universal Darwin x64/arm64 prebuild. `app-unpacked/package.json` declares React 18.2, serialport 12, Zustand 4.4, and Cesium 1.120.
 
 ## Testing & QA
 
-No application test files were found under `app-unpacked/out/`; the manifest has no test scripts, and no coverage or CI configuration is included. The extraction verified all 7,337 file and block hashes, and the backup checksum matches the original. No app build, test run, repack, or Windows launch has been performed.
+No application test files were found under `app-unpacked/out/`; the manifest has no test scripts, and no coverage or CI configuration is included. A macOS smoke run with Electron 44.5.1 loaded the bundled renderer; selecting Serial populated detected `/dev/` ports through the native binding. No physical serial/TCP connection, app build, repack, or Windows launch was tested. The extraction verified all 7,337 file and block hashes, and the backup checksum matches the original.
